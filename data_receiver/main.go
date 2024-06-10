@@ -4,13 +4,36 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gorilla/websocket"
 
 	"github.com/KurobaneShin/tolling/types"
 )
 
+const kafkaTopic = "obudata"
+
 func main() {
+	p, err := kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers": "localhost:29092",
+		"client.id":         "foo",
+		"acks":              "all",
+	})
+
+	topic := kafkaTopic
+	p.Produce(&kafka.Message{
+		TopicPartition: kafka.TopicPartition{
+			Topic:     &topic,
+			Partition: kafka.PartitionAny,
+		},
+		Value: []byte("test"),
+	}, nil)
+
+	if err != nil {
+		fmt.Printf("failed to create producer: %s", err)
+		os.Exit(1)
+	}
 	recv := NewDataReceiver()
 	http.HandleFunc("/ws", recv.handleWs)
 	http.ListenAndServe(":30000", nil)
@@ -50,6 +73,6 @@ func (dr *DataReceiver) wsReceiveLoop() {
 			continue
 		}
 		fmt.Printf("received OBU data from [%d] :: <lat %.2f, long %.2f>\n", data.OBUID, data.Lat, data.Long)
-		dr.msgch <- data
+		// dr.msgch <- data
 	}
 }
