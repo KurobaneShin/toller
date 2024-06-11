@@ -10,8 +10,6 @@ import (
 	"github.com/KurobaneShin/tolling/types"
 )
 
-var kafkaTopic = "obudata"
-
 func main() {
 	recv, err := NewDataReceiver()
 	if err != nil {
@@ -29,10 +27,11 @@ type DataReceiver struct {
 }
 
 func NewDataReceiver() (*DataReceiver, error) {
-	p, err := NewKafkaProducer()
+	p, err := NewKafkaProducer("obudata")
 	if err != nil {
 		return nil, err
 	}
+	p = NewLogMiddleware(p)
 	return &DataReceiver{
 		msgch: make(chan types.OBUData, 128),
 		prod:  p,
