@@ -1,12 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gorilla/websocket"
 
 	"github.com/KurobaneShin/tolling/types"
@@ -25,51 +23,24 @@ func main() {
 }
 
 type DataReceiver struct {
-	msgch    chan types.OBUData
-	conn     *websocket.Conn
-	producer *kafka.Producer
+	msgch chan types.OBUData
+	conn  *websocket.Conn
+	prod  DataProducer
 }
 
 func NewDataReceiver() (*DataReceiver, error) {
-	p, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": "localhost:29092",
-		"client.id":         "foo",
-		"acks":              "all",
-	})
+	p, err := NewKafkaProducer()
 	if err != nil {
 		return nil, err
 	}
-	go func() {
-		for e := range p.Events() {
-			switch ev := e.(type) {
-			case *kafka.Message:
-				fmt.Printf("message received: %+v\n", ev.TopicPartition)
-
-			case *kafka.Error:
-				fmt.Printf("%+s\n", e)
-			}
-		}
-	}()
 	return &DataReceiver{
-		msgch:    make(chan types.OBUData, 128),
-		producer: p,
+		msgch: make(chan types.OBUData, 128),
+		prod:  p,
 	}, nil
 }
 
 func (dr *DataReceiver) produceData(data types.OBUData) error {
-	b, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
-	err = dr.producer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{
-			Topic:     &kafkaTopic,
-			Partition: kafka.PartitionAny,
-		},
-		Value: b,
-	}, nil)
-	return err
+	return dr.prod.ProduceData(data)
 }
 
 func (dr *DataReceiver) handleWs(w http.ResponseWriter, r *http.Request) {
