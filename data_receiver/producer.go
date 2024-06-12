@@ -26,17 +26,6 @@ func NewKafkaProducer(topic string) (DataProducer, error) {
 	if err != nil {
 		return nil, err
 	}
-	// go func() {
-	// 	for e := range p.Events() {
-	// 		switch ev := e.(type) {
-	// 		case *kafka.Message:
-	// 			fmt.Printf("message received: %+v\n", ev.TopicPartition)
-	//
-	// 		case *kafka.Error:
-	// 			fmt.Printf("%+s\n", e)
-	// 		}
-	// 	}
-	// }()
 
 	return &KafkaProducer{
 		producer: p,
