@@ -1,10 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/sirupsen/logrus"
+
+	"github.com/KurobaneShin/tolling/types"
 )
 
 type KafkaConsumer struct {
@@ -17,7 +20,6 @@ func NewKafkaConsumer(topic string, svc CalculatorServicer) (*KafkaConsumer, err
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": "localhost:29092",
 		"group.id":          "foo",
-		"auto.offset.reset": "earliest",
 	})
 	if err != nil {
 		return nil, err
@@ -44,7 +46,19 @@ func (c *KafkaConsumer) readMessageLoop() {
 			logrus.Errorf("kafka consume error %s", err)
 			continue
 		}
+		var data types.OBUData
+		if err := json.Unmarshal(msg.Value, &data); err != nil {
+			logrus.Errorf("JSON seriaization error: %s", err)
+			continue
+		}
 
-		fmt.Printf("message on %s: %s\n", msg.TopicPartition, string(msg.Value))
+		distance, err := c.calcService.CalculateDistance(data)
+		if err != nil {
+			logrus.Errorf("calculation error: %s", err)
+			continue
+
+		}
+
+		fmt.Printf("distance %.2f\n", distance)
 	}
 }
