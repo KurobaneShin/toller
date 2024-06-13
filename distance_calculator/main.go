@@ -9,7 +9,11 @@ type DistanceCalculator struct{}
 const kafkaTopic = "obudata"
 
 func main() {
-	kafkaConsumer, err := NewKafkaConsumer(kafkaTopic, NewCalculatorService())
+	var svc CalculatorServicer
+	svc = NewCalculatorService()
+	svc = NewLogMiddleware(svc)
+
+	kafkaConsumer, err := NewKafkaConsumer(kafkaTopic, svc)
 	if err != nil {
 		log.Fatal(err)
 	}
