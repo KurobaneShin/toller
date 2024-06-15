@@ -14,6 +14,7 @@ func main() {
 	flag.Parse()
 	store := NewMemoryStore()
 	svc := NewInvoiceAggregator(store)
+	svc = NewLogMiddleware(svc)
 
 	makeHttpTransport(*listenAddr, svc)
 }
