@@ -25,4 +25,5 @@ go mod tidy
 or
 ```
 go get google.golang.org.protobuf
+go get google.golang.org/grpc
 ```

@@ -2,4 +2,12 @@ syntax = "proto3";
 
 option go_package = "github.com/kurobaneshin/toller/types";
 
-message Test { int32 someint = 1; }
+service Aggregator { rpc DistanceAggregator(AggregateRequest) returns (None); }
+
+message None {};
+
+message AggregateRequest {
+  int32 ObuID = 1;
+  double Value = 2;
+  int64 Unix = 3;
+}
