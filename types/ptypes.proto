@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+option go_package = "github.com/kurobaneshin/toller/types";
+
+message Test { int32 someint = 1; }

@@ -12,5 +12,7 @@ aggregator:
 	@./bin/aggregator
 up:
 	@docker compose up -d
+proto:
+	protoc --go_out=. --go_opt=paths=source_relative types/ptypes.proto
 
 .PHONY: obu, aggregator
