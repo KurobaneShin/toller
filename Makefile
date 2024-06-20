@@ -10,6 +10,9 @@ calculator:
 aggregator:
 	@go build -o bin/aggregator ./aggregator
 	@./bin/aggregator
+gate:
+	@go build -o bin/gate ./gateway
+	@./bin/gate
 up:
 	@docker compose up -d
 proto:
