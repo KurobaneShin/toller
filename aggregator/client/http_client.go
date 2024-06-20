@@ -20,6 +20,14 @@ func NewHTTPClient(endpoint string) Client {
 	}
 }
 
+func (c *HTTPClient) GetInvoice(ctx context.Context, id int) (*types.Invoice, error) {
+	return &types.Invoice{
+		OBUID:         id,
+		TotalDistance: 444,
+		TotalAmount:   44,
+	}, nil
+}
+
 func (c *HTTPClient) Aggregate(ctx context.Context, aggReq *types.AggregateRequest) error {
 	b, err := json.Marshal(aggReq)
 	if err != nil {
