@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "github.com/kurobaneshin/toller/types";
 
-service Aggregator { rpc DistanceAggregator(AggregateRequest) returns (None); }
+service Aggregator { rpc Aggregate(AggregateRequest) returns (None); }
 
 message None {};
 
