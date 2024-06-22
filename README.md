@@ -27,3 +27,8 @@ or
 go get google.golang.org.protobuf
 go get google.golang.org/grpc
 ```
+
+4. install prometheus golang client
+```
+go get github.com/prometheus/client_golang/prometheus
+```
