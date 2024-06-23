@@ -18,10 +18,10 @@ import (
 
 func main() {
 	var (
+		store    = makeStore(os.Getenv("AGG_STORE_TYPE"))
 		httpAddr = os.Getenv("AGG_HTTP_ENDPOINT")
 		grpcAddr = os.Getenv("AGG_GRPC_ENDPOINT")
 	)
-	store := NewMemoryStore()
 	svc := NewInvoiceAggregator(store)
 	svc = NewMetricsMiddleware(svc)
 	svc = NewLogMiddleware(svc)
@@ -107,6 +107,15 @@ func writeJSON(w http.ResponseWriter, status int, v any) error {
 	w.WriteHeader(status)
 	w.Header().Add("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(v)
+}
+
+func makeStore(sType string) Storer {
+	switch sType {
+	case "memory":
+		return NewMemoryStore()
+	default:
+		return NewMemoryStore()
+	}
 }
 
 func init() {
