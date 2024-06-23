@@ -2,13 +2,14 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 
+	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 
@@ -16,18 +17,19 @@ import (
 )
 
 func main() {
-	httpAddr := flag.String("httpAddr", ":3000", "the listen address of the HTTP server")
-	grpcAddr := flag.String("grpcAddr", ":3001", "the listen address of the HTTP server")
-	flag.Parse()
+	var (
+		httpAddr = os.Getenv("AGG_HTTP_ENDPOINT")
+		grpcAddr = os.Getenv("AGG_GRPC_ENDPOINT")
+	)
 	store := NewMemoryStore()
 	svc := NewInvoiceAggregator(store)
 	svc = NewMetricsMiddleware(svc)
 	svc = NewLogMiddleware(svc)
 	go func() {
-		log.Fatal(makeGrpcTransport(*grpcAddr, svc))
+		log.Fatal(makeGrpcTransport(grpcAddr, svc))
 	}()
 
-	log.Fatal(makeHttpTransport(*httpAddr, svc))
+	log.Fatal(makeHttpTransport(httpAddr, svc))
 }
 
 func makeGrpcTransport(listenAddr string, svc Aggregator) error {
@@ -96,4 +98,10 @@ func writeJSON(w http.ResponseWriter, status int, v any) error {
 	w.WriteHeader(status)
 	w.Header().Add("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(v)
+}
+
+func init() {
+	if err := godotenv.Load(); err != nil {
+		log.Fatal(err)
+	}
 }
