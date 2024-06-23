@@ -56,6 +56,11 @@ func makeHttpTransport(listenAddr string, svc Aggregator) error {
 
 func handleGetInvoice(svc Aggregator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "Method not allowed"})
+			return
+		}
+
 		obuId := r.URL.Query().Get("obu")
 		if len(obuId) == 0 {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "missing obu query param"})
@@ -81,6 +86,10 @@ func handleGetInvoice(svc Aggregator) http.HandlerFunc {
 
 func handleAggregate(svc Aggregator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "Method not allowed"})
+			return
+		}
 		var distance types.Distance
 
 		if err := json.NewDecoder(r.Body).Decode(&distance); err != nil {
