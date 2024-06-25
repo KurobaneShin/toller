@@ -6,8 +6,11 @@ import (
 	"log"
 	"net"
 	"net/http"
+<<<<<<< Updated upstream
 	"os"
 	"strconv"
+=======
+>>>>>>> Stashed changes
 
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -54,6 +57,7 @@ func makeHttpTransport(listenAddr string, svc Aggregator) error {
 	return http.ListenAndServe(listenAddr, nil)
 }
 
+<<<<<<< Updated upstream
 func handleGetInvoice(svc Aggregator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
@@ -103,6 +107,8 @@ func handleAggregate(svc Aggregator) http.HandlerFunc {
 	}
 }
 
+=======
+>>>>>>> Stashed changes
 func writeJSON(w http.ResponseWriter, status int, v any) error {
 	w.WriteHeader(status)
 	w.Header().Add("Content-Type", "application/json")
