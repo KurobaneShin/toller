@@ -6,11 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
-<<<<<<< Updated upstream
 	"os"
-	"strconv"
-=======
->>>>>>> Stashed changes
 
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -49,66 +45,17 @@ func makeGrpcTransport(listenAddr string, svc Aggregator) error {
 }
 
 func makeHttpTransport(listenAddr string, svc Aggregator) error {
-	fmt.Println("HTTP transport running on port", listenAddr)
+	aggMetricHandler := newHTTPMetricsHandler("aggregate")
+	invMetricHandler := newHTTPMetricsHandler("invoice")
 
-	http.HandleFunc("/aggregate", handleAggregate(svc))
-	http.HandleFunc("/invoice", handleGetInvoice(svc))
+	http.HandleFunc("/aggregate", aggMetricHandler.instrument(handleAggregate(svc)))
+	http.HandleFunc("/invoice", invMetricHandler.instrument(handleGetInvoice(svc)))
 	http.Handle("/metrics", promhttp.Handler())
+
+	fmt.Println("HTTP transport running on port", listenAddr)
 	return http.ListenAndServe(listenAddr, nil)
 }
 
-<<<<<<< Updated upstream
-func handleGetInvoice(svc Aggregator) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "GET" {
-			writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "Method not allowed"})
-			return
-		}
-
-		obuId := r.URL.Query().Get("obu")
-		if len(obuId) == 0 {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "missing obu query param"})
-			return
-		}
-
-		obuID, err := strconv.Atoi(obuId)
-		if err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "obuId is not a number"})
-			return
-		}
-
-		inv, err := svc.CalculateInvoice(obuID)
-		if err != nil {
-
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-			return
-		}
-
-		writeJSON(w, http.StatusOK, inv)
-	}
-}
-
-func handleAggregate(svc Aggregator) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "Method not allowed"})
-			return
-		}
-		var distance types.Distance
-
-		if err := json.NewDecoder(r.Body).Decode(&distance); err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-			return
-		}
-		if err := svc.AggregateDistance(distance); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-			return
-		}
-	}
-}
-
-=======
->>>>>>> Stashed changes
 func writeJSON(w http.ResponseWriter, status int, v any) error {
 	w.WriteHeader(status)
 	w.Header().Add("Content-Type", "application/json")

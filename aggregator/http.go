@@ -2,11 +2,37 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/KurobaneShin/tolling/types"
 )
+
+type HTTPMetricHandler struct {
+	reqCounter prometheus.Counter
+}
+
+func newHTTPMetricsHandler(reqName string) *HTTPMetricHandler {
+	reqCounter := promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: fmt.Sprintf("http_%s_%s", reqName, "request_counter"),
+		Name:      "aggregator",
+	})
+
+	return &HTTPMetricHandler{
+		reqCounter: reqCounter,
+	}
+}
+
+func (h *HTTPMetricHandler) instrument(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.reqCounter.Inc()
+		next(w, r)
+	}
+}
 
 func handleGetInvoice(svc Aggregator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
