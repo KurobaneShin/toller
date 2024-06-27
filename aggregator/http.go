@@ -14,6 +14,17 @@ import (
 	"github.com/KurobaneShin/tolling/types"
 )
 
+type HTTPFunc func(w http.ResponseWriter, r *http.Request) error
+
+type APIError struct {
+	Code int
+	Err  error
+}
+
+func (e APIError) Error() string {
+	return e.Err.Error()
+}
+
 type HTTPMetricHandler struct {
 	reqCounter prometheus.Counter
 	reqLatency prometheus.Histogram
@@ -36,46 +47,53 @@ func newHTTPMetricsHandler(reqName string) *HTTPMetricHandler {
 	}
 }
 
-func (h *HTTPMetricHandler) instrument(next http.HandlerFunc) http.HandlerFunc {
+func (h *HTTPMetricHandler) instrument(next HTTPFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func(start time.Time) {
 			latency := time.Since(start).Seconds()
 
 			logrus.WithFields(logrus.Fields{
-				"latency":latency,
-				"req":r.RequestURI,
+				"latency": latency,
+				"req":     r.RequestURI,
 			}).Info()
 
 			h.reqLatency.Observe(latency)
 		}(time.Now())
 
 		h.reqCounter.Inc()
-		next(w, r)
+		if err := next(w, r); err != nil {
+			fmt.Println("bla")
+		}
 	}
 }
 
-func handleGetInvoice(svc Aggregator) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func handleGetInvoice(svc Aggregator) HTTPFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
 		obuId := r.URL.Query().Get("obu")
 		if len(obuId) == 0 {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "missing obu query param"})
-			return
+			return APIError{
+				Code: http.StatusBadRequest,
+				Err:  fmt.Errorf("missing obu query param"),
+			}
 		}
 
 		obuID, err := strconv.Atoi(obuId)
 		if err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "obuId is not a number"})
-			return
+			return APIError{
+				Code: http.StatusBadRequest,
+				Err:  fmt.Errorf("obuId is not a number"),
+			}
 		}
 
 		inv, err := svc.CalculateInvoice(obuID)
 		if err != nil {
-
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-			return
+			return APIError{
+				Code: http.StatusInternalServerError,
+				Err:  err,
+			}
 		}
 
-		writeJSON(w, http.StatusOK, inv)
+		return writeJSON(w, http.StatusOK, inv)
 	}
 }
 
