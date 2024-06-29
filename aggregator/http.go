@@ -30,6 +30,16 @@ type HTTPMetricHandler struct {
 	reqLatency prometheus.Histogram
 }
 
+func makeHttpHandlerFunc(fn HTTPFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := fn(w, r); err != nil {
+			if apiErr, ok := err.(APIError); ok {
+				writeJSON(w, apiErr.Code, apiErr)
+			}
+		}
+	}
+}
+
 func newHTTPMetricsHandler(reqName string) *HTTPMetricHandler {
 	reqCounter := promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: fmt.Sprintf("http_%s_%s", reqName, "request_counter"),
@@ -47,23 +57,24 @@ func newHTTPMetricsHandler(reqName string) *HTTPMetricHandler {
 	}
 }
 
-func (h *HTTPMetricHandler) instrument(next HTTPFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (h *HTTPMetricHandler) instrument(next HTTPFunc) HTTPFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var err error
 		defer func(start time.Time) {
 			latency := time.Since(start).Seconds()
 
 			logrus.WithFields(logrus.Fields{
 				"latency": latency,
 				"req":     r.RequestURI,
+				"err":     err,
 			}).Info()
 
 			h.reqLatency.Observe(latency)
 		}(time.Now())
 
 		h.reqCounter.Inc()
-		if err := next(w, r); err != nil {
-			fmt.Println("bla")
-		}
+		err = next(w, r)
+		return nil
 	}
 }
 
