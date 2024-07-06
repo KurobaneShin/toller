@@ -70,9 +70,9 @@ func (h *HTTPMetricHandler) instrument(next HTTPFunc) HTTPFunc {
 			}).Info()
 
 			h.reqLatency.Observe(latency)
+			h.reqCounter.Inc()
 		}(time.Now())
 
-		h.reqCounter.Inc()
 		err = next(w, r)
 		return nil
 	}
@@ -108,17 +108,22 @@ func handleGetInvoice(svc Aggregator) HTTPFunc {
 	}
 }
 
-func handleAggregate(svc Aggregator) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func handleAggregate(svc Aggregator) HTTPFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
 		var distance types.Distance
 
 		if err := json.NewDecoder(r.Body).Decode(&distance); err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-			return
+			return APIError{
+				Code: http.StatusBadRequest,
+				Err:  err,
+			}
 		}
 		if err := svc.AggregateDistance(distance); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-			return
+			return APIError{
+				Code: http.StatusBadRequest,
+				Err:  err,
+			}
 		}
+		return nil
 	}
 }
