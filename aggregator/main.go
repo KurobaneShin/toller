@@ -45,13 +45,14 @@ func makeGrpcTransport(listenAddr string, svc Aggregator) error {
 }
 
 func makeHttpTransport(listenAddr string, svc Aggregator) error {
-	// aggMetricHandler := newHTTPMetricsHandler("aggregate")
-	invMetricHandler := newHTTPMetricsHandler("invoice")
+	var (
+		aggMetricHandler = newHTTPMetricsHandler("aggregate")
+		invMetricHandler = newHTTPMetricsHandler("invoice")
 
-	// aggHandler := makeHttpHandlerFunc(aggMetricHandler.instrument(handleAggregate(svc)))
-	// http.HandleFunc("/aggregate", aggHandler)
-
-	invoiceHandler := makeHttpHandlerFunc(invMetricHandler.instrument(handleGetInvoice(svc)))
+		invoiceHandler = makeHttpHandlerFunc(invMetricHandler.instrument(handleGetInvoice(svc)))
+		aggHandler     = makeHttpHandlerFunc(aggMetricHandler.instrument(handleAggregate(svc)))
+	)
+	http.HandleFunc("/aggregate", aggHandler)
 	http.HandleFunc("/invoice", invoiceHandler)
 	http.Handle("/metrics", promhttp.Handler())
 
