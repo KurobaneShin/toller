@@ -13,7 +13,8 @@ type Distance struct {
 }
 
 type OBUData struct {
-	OBUID int     `json:"obuId,omitempty"`
-	Lat   float64 `json:"lat,omitempty"`
-	Long  float64 `json:"long,omitempty"`
+	OBUID     int     `json:"obuId,omitempty"`
+	Lat       float64 `json:"lat,omitempty"`
+	Long      float64 `json:"long,omitempty"`
+	RequestId int     `json:"request_id,omitempty"`
 }

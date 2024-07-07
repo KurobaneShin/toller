@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
+	"math/rand"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -60,10 +62,12 @@ func (dr *DataReceiver) wsReceiveLoop() {
 	fmt.Println("New OBU connected client connected")
 	for {
 		var data types.OBUData
+		reqid := rand.Intn(math.MaxInt)
 		if err := dr.conn.ReadJSON(&data); err != nil {
 			log.Println("read error: ", err)
 			continue
 		}
+		data.RequestId = reqid
 		if err := dr.produceData(data); err != nil {
 			fmt.Println("kafka produce error: ", err)
 		}

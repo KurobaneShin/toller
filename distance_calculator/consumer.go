@@ -37,6 +37,10 @@ func NewKafkaConsumer(topic string, svc CalculatorServicer, aggClient client.Cli
 	}, nil
 }
 
+func (c *KafkaConsumer) close() {
+	c.isRunning = false
+}
+
 func (c *KafkaConsumer) Start() {
 	logrus.Info("kafka transport started")
 	c.isRunning = true
@@ -53,6 +57,10 @@ func (c *KafkaConsumer) readMessageLoop() {
 		var data types.OBUData
 		if err := json.Unmarshal(msg.Value, &data); err != nil {
 			logrus.Errorf("JSON seriaization error: %s", err)
+			logrus.WithFields(logrus.Fields{
+				"err":       err,
+				"requestId": data.RequestId,
+			}).Error()
 			continue
 		}
 
@@ -64,9 +72,10 @@ func (c *KafkaConsumer) readMessageLoop() {
 		}
 
 		req := &types.AggregateRequest{
-			Value: distance,
-			Unix:  time.Now().UnixNano(),
-			ObuID: int32(data.OBUID),
+			Value:     distance,
+			Unix:      time.Now().UnixNano(),
+			ObuID:     int32(data.OBUID),
+			RequestId: int64(data.RequestId),
 		}
 
 		if err := c.aggClient.Aggregate(context.Background(), req); err != nil {
